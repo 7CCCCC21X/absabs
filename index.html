@@ -317,14 +317,17 @@
 
         // 无论是否出错，都插入一行
         let row = document.createElement("tr");
-        let addrsText = "无";
+        let addrsHTML = "无";
 
         if (errorHappened) {
-          addrsText = "无法查询";
+          addrsHTML = "无法查询";
         } else if (toAddrSet.size > 0) {
           const arr = Array.from(toAddrSet);
-          // 一行一个地址
-          addrsText = arr.join("\n");
+          // 每个地址：超链接到 DeBank
+          // <br> 分隔行
+          addrsHTML = arr.map(a => {
+            return `<a href="https://debank.com/profile/${a}" target="_blank">${a}</a>`;
+          }).join("<br>");
           totalRecords += arr.length;
 
           // 推入全局
@@ -336,7 +339,7 @@
         row.innerHTML = `
           <td data-label="#">${i + 1}</td>
           <td data-label="地址">${w}</td>
-          <td data-label="关联地址" style="white-space:pre;">${addrsText}</td>
+          <td data-label="关联地址">${addrsHTML}</td>
         `;
         tbBody.appendChild(row);
       }
