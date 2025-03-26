@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>Abs地址关联查询 (升级版)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    /* 全局样式 */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: #f7f7f7;
+    }
+
+    /* 容器 */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    /* 顶部标题 & 数据入口按钮 */
+    .top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    h1 {
+      margin: 0;
+      font-size: 26px;
+      font-weight: bold;
+      color: #333;
+    }
+    .entry-btn {
+      text-decoration: none;
+      padding: 10px 24px;
+      font-size: 14px;
+      background: #28a745;
+      color: #fff;
+      border-radius: 4px;
+    }
+    .entry-btn:hover {
+      background: #218838;
+    }
+
+    /* 输入区与查询按钮 */
+    .input-area {
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .input-area h2 {
+      margin-top: 0;
+      font-size: 18px;
+      color: #444;
+    }
+    textarea {
+      width: 100%;
+      height: 100px;
+      font-size: 14px;
+      padding: 8px;
+      margin-top: 10px;
+      resize: vertical;
+      box-sizing: border-box;
+    }
+
+    /* 按钮 */
+    .btn {
+      margin-top: 12px;
+      padding: 10px 24px;
+      font-size: 14px;
+      background: #007bff;
+      border: none;
+      border-radius: 4px;
+      color: #fff;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    .btn:hover {
+      background: #0056b3;
+    }
+
+    /* 加载动画与进度 */
+    #loadingArea {
+      margin-top: 10px;
+      display: none;
+      align-items: center;
+    }
+    #loadingText {
+      margin-left: 8px;
+      font-size: 16px;
+      color: #c0392b;
+      font-weight: bold;
+    }
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid #ccc;
+      border-top: 2px solid #007bff;
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* 结果卡片 */
+    .card {
+      background: #fff;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.06);
+      padding: 16px;
+      margin-top: 16px;
+    }
+
+    /* 表格样式 */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      font-size: 14px;
+      text-align: left;
+    }
+    th {
+      background: #f4f4f4;
+      font-size: 15px;
+    }
+
+    /* 响应式表格 */
+    @media (max-width: 768px) {
+      table, thead, tbody, tr, th, td {
+        display: block;
+        width: 100%;
+      }
+      thead tr {
+        display: none;
+      }
+      tr {
+        margin-bottom: 10px;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        background: #fff;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      }
+      td {
+        border: none;
+        border-bottom: 1px solid #eee;
+        position: relative;
+        padding-left: 50%;
+      }
+      td::before {
+        position: absolute;
+        left: 12px;
+        top: 10px;
+        font-weight: bold;
+        content: attr(data-label);
+      }
+    }
+
+    /* 作者推特右下角对齐 */
+    .footer {
+      text-align: right;
+      margin-top: 20px;
+      color: #666;
+    }
+    .footer a {
+      color: #007bff;
+      text-decoration: none;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+
+    <!-- 顶部标题 & 入口按钮 -->
+    <div class="top-row">
+      <h1>Abs地址关联查询</h1>
+      <a href="https://abs-ten.vercel.app/" target="_blank" class="entry-btn">
+        Abs批量查询数据入口
+      </a>
+    </div>
+
+    <!-- 输入与查询 -->
+    <div class="input-area">
+      <h2>请输入地址</h2>
+      <p>在下方文本框中，每行输入一个钱包地址，然后点击“查询”：</p>
+      <textarea id="walletsInput" placeholder="示例：0x000000000000000000000000000000000"></textarea>
+      <br>
+      <button class="btn" onclick="startQuery()">查询</button>
+      <button class="btn" id="copyAllBtn" onclick="copyAll()" style="display:none;">一键复制</button>
+
+      <div id="loadingArea">
+        <div class="spinner"></div>
+        <div id="loadingText"></div>
+      </div>
+    </div>
+
+    <!-- 结果展示区 -->
+    <div id="result"></div>
+
+    <!-- 作者推特信息 -->
+    <div class="footer">
+      作者推特：
+      <a href="https://twitter.com/0xXIAOc" target="_blank">@0xXIAOc</a>
+    </div>
+
+  </div><!-- /container -->
+
+  <script>
+    let totalAddrs = 0;
+    let currentIndex = 0;
+    let allAssociatedAddresses = [];
+
+    async function startQuery() {
+      const resultDiv = document.getElementById('result');
+      const copyAllBtn = document.getElementById('copyAllBtn');
+      const loadingArea = document.getElementById('loadingArea');
+      const loadingText = document.getElementById('loadingText');
+
+      // 初始化
+      copyAllBtn.style.display = "none"; 
+      resultDiv.innerHTML = "";
+      allAssociatedAddresses = [];
+
+      // 读取文本框内的多个地址
+      const addresses = document.getElementById('walletsInput').value
+        .trim()
+        .split(/\r?\n/)
+        .map(a => a.trim())
+        .filter(a => a);
+
+      if (!addresses.length) {
+        alert("请至少输入一个钱包地址！");
+        return;
+      }
+
+      // 显示加载动画
+      loadingArea.style.display = "flex";
+      totalAddrs = addresses.length;
+      currentIndex = 0;
+
+      // 准备一个容器
+      let cardHTML = `
+        <div class="card" id="cardContainer">
+          <p id="summary" style="font-weight:bold;"></p>
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>地址</th>
+                <th>关联地址</th>
+              </tr>
+            </thead>
+            <tbody id="tbBody"></tbody>
+          </table>
+        </div>
+      `;
+      resultDiv.innerHTML = cardHTML;
+
+      const tbBody = document.getElementById('tbBody');
+      const summaryP = document.getElementById('summary');
+
+      let totalRecords = 0; // 统计所有关联地址数
+
+      // 依次处理每个地址
+      for (let i = 0; i < addresses.length; i++) {
+        const w = addresses[i];
+        currentIndex = i + 1;
+        loadingText.innerText = `正在处理第 ${currentIndex} / ${totalAddrs} 个地址...`;
+
+        let toAddrSet = new Set();
+        let errorHappened = false;
+
+        try {
+          const url = `https://li.quest/v1/analytics/transfers?fromTimestamp=1424747708&status=ALL&integrator=jumper.exchange&wallet=${w}`;
+          const resp = await fetch(url);
+
+          if (!resp.ok) {
+            throw new Error(`网络错误: ${resp.status}`);
+          }
+          const data = await resp.json();
+
+          if (!data || !Array.isArray(data.transfers)) {
+            console.warn("接口返回结构不对:", data);
+            throw new Error("接口返回结构不对");
+          }
+
+          // 筛选 receiving.txLink 含 abscan.org
+          const filtered = data.transfers.filter(item => {
+            if (!item.receiving) return false;
+            const link = item.receiving.txLink || "";
+            return link.includes("abscan.org");
+          });
+
+          filtered.forEach(tr => {
+            if (tr.toAddress) {
+              toAddrSet.add(tr.toAddress.toLowerCase());
+            }
+          });
+
+        } catch (err) {
+          console.error("查询失败:", w, err);
+          errorHappened = true;
+        }
+
+        // 无论是否出错，都插入一行
+        let row = document.createElement("tr");
+        let addrsText = "无";
+
+        if (errorHappened) {
+          addrsText = "无法查询";
+        } else if (toAddrSet.size > 0) {
+          const arr = Array.from(toAddrSet);
+          // 一行一个地址
+          addrsText = arr.join("\n");
+          totalRecords += arr.length;
+
+          // 推入全局
+          arr.forEach(a => {
+            allAssociatedAddresses.push(a);
+          });
+        }
+
+        row.innerHTML = `
+          <td data-label="#">${i + 1}</td>
+          <td data-label="地址">${w}</td>
+          <td data-label="关联地址" style="white-space:pre;">${addrsText}</td>
+        `;
+        tbBody.appendChild(row);
+      }
+
+      // 隐藏加载动画
+      loadingArea.style.display = "none";
+
+      // 在summary上方展示查询概况
+      summaryP.innerHTML = `共查询 ${addresses.length} 个地址，找到关联地址共 ${totalRecords} 条。`;
+
+      // 若找到任何实际的关联地址，则显示“一键复制”
+      if (totalRecords > 0) {
+        copyAllBtn.style.display = "inline-block";
+      }
+    }
+
+    // 一键复制函数
+    function copyAll() {
+      // 去重
+      const uniqueAddrs = Array.from(new Set(allAssociatedAddresses));
+      if (!uniqueAddrs.length) {
+        alert("当前没有可复制的关联地址。");
+        return;
+      }
+
+      // 一行一个地址
+      const finalText = uniqueAddrs.join("\n");
+      navigator.clipboard.writeText(finalText)
+        .then(() => {
+          alert("已复制所有关联地址:\n" + finalText);
+        })
+        .catch(err => {
+          alert("复制失败: " + err);
+        });
+    }
+  </script>
+</body>
+</html>
